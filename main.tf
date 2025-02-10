@@ -1,29 +1,26 @@
 resource "aviatrix_spoke_gateway" "spoke_gateway" {
-  gw_name        = "spoke-gateway-test"  # GW name
-  cloud_type     = 1                     # 1 for AWS
-  account_name   = "AWS"     # Aviatrix account name
-  vpc_id         = var.vpc_id            # VPC ID from variables
-  subnet         = "10.117.252.64/27"    # Private subnet
-  gw_size        = "small"               # 
-  vpc_reg        = var.aws_region        # 
-  enable_bgp     = true                  # Enable BGP if needed
-  allocate_new_eip = false               # Do not allocate a new EIP to prevent public exposure
-  eip           = "15.157.23.4"
-  tags = {
-    Name        = "Spoke Gateway Test"
-    Environment = "Development"  # Add any additional tags as needed
-  }
+  gw_name        = var.gw_name            # GW name
+  cloud_type     = var.cloud_type         # 1 for AWS
+  account_name   = "AWS"                  # Aviatrix account name
+  vpc_id         = var.vpc_id             # VPC ID from variables
+  subnet         = var.subnet              # Private subnet
+  gw_size        = var.gw_size             #
+  vpc_reg        = var.aws_region          #
+  enable_bgp     = var.enable_bgp         # Enable BGP if needed
+  allocate_new_eip = var.allocate_new_eip  # Do not allocate a new EIP to prevent public exposure
+  eip           = var.eip                  # Elastic IP
+  tags          = var.tags                 # Tags
 
   # Security settings to prevent unintended exposure
-  enable_private_oob                    = false   # Enable private out-of-band management
-  enable_private_vpc_default_route      = true   # Use private VPC default route
-  enable_skip_public_route_table_update  = true   # Skip public route table updates
+  enable_private_oob                    = var.enable_private_oob  # Enable private out-of-band management
+  enable_private_vpc_default_route      = var.enable_private_vpc_default_route  # Use private VPC default route
+  enable_skip_public_route_table_update  = var.enable_skip_public_route_table_update  # Skip public route table updates
 }
 
 # Security Group Configuration
 resource "aws_security_group" "spoke_gateway_sg" {
-  name        = "spoke-gateway-sg"
-  description = "Security group for Spoke Gateway"
+  name        = var.security_group_name
+  description = var.security_group_description
   vpc_id      = var.vpc_id
 
   # Inbound rules
@@ -31,7 +28,7 @@ resource "aws_security_group" "spoke_gateway_sg" {
     from_port   = 443                     # Allow HTTPS traffic
     to_port     = 443
     protocol    = "tcp"
-    cidr_blocks = ["10.0.0.0/8"]          # Restrict access to internal network CIDR
+    cidr_blocks = var.ingress_cidr_blocks  # Restrict access to internal network CIDR
   }
 
   # Outbound rules
@@ -39,7 +36,7 @@ resource "aws_security_group" "spoke_gateway_sg" {
     from_port   = 0
     to_port     = 0
     protocol    = "-1"                    # Allow all outbound traffic
-    cidr_blocks = ["0.0.0.0/0"]           # Adjust as necessary for your security policy
+    cidr_blocks = var.egress_cidr_blocks   # Adjust as necessary for your security policy
   }
 }
 
